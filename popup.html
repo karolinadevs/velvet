@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popup Notes</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Folders</h2>
+            </div>
+            <ul id="folder-list" class="folder-list"></ul>
+            <button id="btn-new-folder" class="btn-primary" title="Ctrl+Shift+F">+ New Folder</button>
+        </aside>
+
+        <main class="board-container">
+            <div id="board" class="board"></div>
+
+            <button id="fab-new-note" class="fab" title="New Note (Ctrl+N)">+</button>
+        </main>
+    </div>
+
+    <div id="context-menu" class="context-menu hidden">
+        <div class="menu-item has-submenu">
+            Move to folder...
+            <div class="submenu" id="context-folder-list">
+            </div>
+        </div>
+        <div class="menu-item text-danger" id="context-delete">Delete note</div>
+    </div>
+
+    <input type="text" id="shortcut-focus" style="position:absolute; opacity:0; pointer-events:none;">
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
