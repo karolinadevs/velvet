@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Tab</title>
+    <link rel="stylesheet" href="newtab.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>Folders</h2>
+                <button id="toggle-sidebar" class="icon-btn" title="Toggle Sidebar">«</button>
+            </div>
+            <ul id="folder-list" class="folder-list"></ul>
+            <button id="btn-new-folder" class="btn-primary">+ New Folder</button>
+        </aside>
+
+        <main class="board-container">
+            <button id="toggle-sidebar-show" class="icon-btn hidden" title="Show Sidebar">»</button>
+            <div class="empty-state hidden" id="empty-state">
+                <p>Click + or press <strong>Ctrl+N</strong> to stick a note</p>
+            </div>
+            <div id="board" class="board"></div>
+
+            <button id="fab-new-note" class="fab" title="New Note (Ctrl+N)">+</button>
+        </main>
+    </div>
+
+    <input type="text" id="shortcut-focus" style="position:absolute; opacity:0; pointer-events:none;">
+
+    <script src="newtab.js"></script>
+</body>
+
+</html>
