@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasty</title>
+    <style>
+        :root {
+            --bg-color: #f4f5f7;
+            --text-color: #333;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #e0e0e0;
+            --primary: #5c6bc0;
+            --primary-hover: #3f51b5;
+
+            /* Pastel Palette */
+            --p-yellow: #FFF9C4;
+            --p-pink: #F8BBD0;
+            --p-lilac: #E1BEE7;
+            --p-blue: #BBDEFB;
+            --p-green: #C8E6C9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 250px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #folder-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+            list-style: none;
+        }
+
+        .folder-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .folder-item:hover,
+        .folder-item.active {
+            background: rgba(92, 107, 192, 0.1);
+        }
+
+        .folder-item.active {
+            border-left: 4px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .delete-folder {
+            color: #d32f2f;
+            opacity: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .folder-item:hover .delete-folder {
+            opacity: 1;
+        }
+
+        .add-folder-btn {
+            margin: 10px 20px;
+            padding: 10px;
+            background: transparent;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .add-folder-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Canvas */
+        #canvas {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Sticky Note */
+        .note {
+            position: absolute;
+            width: 220px;
+            min-height: 220px;
+            background: var(--p-yellow);
+            border-radius: 2px 2px 20px 2px;
+            box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.1s, box-shadow 0.2s;
+            z-index: 10;
+        }
+
+        /* Curl Effect */
+        .note::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border-width: 0 0 20px 20px;
+            border-style: solid;
+            border-color: transparent transparent rgba(0, 0, 0, 0.1) transparent;
+            border-radius: 0 0 20px 0;
+            z-index: 1;
+        }
+
+        .note.dragging {
+            box-shadow: 5px 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 99 !important;
+            opacity: 0.9;
+        }
+
+        .note-header {
+            padding: 8px;
+            cursor: grab;
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            position: relative;
+        }
+
+        .note:hover .note-header,
+        .note-header:active {
+            opacity: 1;
+        }
+
+        .note-header:active {
+            cursor: grabbing;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #555;
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Color Picker Popover */
+        .color-picker {
+            position: absolute;
+            top: 100%;
+            right: 25px;
+            background: #fff;
+            padding: 5px;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            display: none;
+            gap: 5px;
+            z-index: 20;
+        }
+
+        .color-picker.show {
+            display: flex;
+        }
+
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .note-content {
+            flex: 1;
+            padding: 0 15px 15px 15px;
+            outline: none;
+            overflow-wrap: break-word;
+            line-height: 1.5;
+            cursor: text;
+        }
+
+        .note-footer {
+            padding: 8px 15px;
+            font-size: 0.75rem;
+            color: rgba(0, 0, 0, 0.5);
+            text-align: right;
+            user-select: none;
+        }
+
+        /* FAB */
+        #fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 30px;
+            box-shadow: 0 4px 12px rgba(92, 107, 192, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background 0.2s;
+            z-index: 100;
+        }
+
+        #fab:hover {
+            transform: scale(1.05);
+            background: var(--primary-hover);
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #323232;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 200;
+        }
+
+        #toast.show {
+            bottom: 30px;
+        }
+
+        #toast button {
+            background: transparent;
+            color: var(--p-blue);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        /* Keyboard shortcuts hint */
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            left: 270px;
+            font-size: 0.8rem;
+            color: #999;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            #sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid var(--sidebar-border);
+            }
+
+            .hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            Folders
+        </div>
+        <ul id="folder-list">
+        </ul>
+        <button class="add-folder-btn" onclick="app.createFolder()">+ New Folder</button>
+    </aside>
+
+    <main id="canvas">
+        <div class="hint">Press <b>Ctrl+N</b> (or Cmd+N) to add a note</div>
+    </main>
+
+    <button id="fab" onclick="app.createNote()" aria-label="Create new note">+</button>
+
+    <div id="toast">
+        <span id="toast-msg">Folder deleted</span>
+        <button onclick="app.undoDelete()">Undo</button>
+    </div>
+
+    <script>
+        const COLORS = {
+            yellow: '#FFF9C4',
+            pink: '#F8BBD0',
+            lilac: '#E1BEE7',
+            blue: '#BBDEFB',
+            green: '#C8E6C9'
+        };
+
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // Debounce utility for auto-saving
+        const debounce = (func, wait) => {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => { clearTimeout(timeout); func(...args); };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+
+        // Time ago formatter
+        const timeAgo = (dateStr) => {
+            if (!dateStr) return '';
+            const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " yrs ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " mos ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " days ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " hrs ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " mins ago";
+            return "Just now";
+        };
+
+        class StickyApp {
+            constructor() {
+                this.folders = JSON.parse(localStorage.getItem('sticky_folders')) || [{ id: 'all', name: 'All Notes', createdAt: new Date().toISOString() }];
+                this.notes = JSON.parse(localStorage.getItem('sticky_notes')) || [];
+                this.activeFolderId = 'all';
+                this.undoCache = null; // { folder, notes }
+                this.undoTimeout = null;
+
+                this.canvas = document.getElementById('canvas');
+                this.folderList = document.getElementById('folder-list');
+
+                this.highestZ = 10;
+                this.dragState = { isDragging: false, el: null, startX: 0, startY: 0, initialX: 0, initialY: 0 };
+
+                this.init();
+            }
+
+            init() {
+                this.renderFolders();
+                this.renderNotes();
+                this.setupGlobalEvents();
+            }
+
+            save() {
+                localStorage.setItem('sticky_folders', JSON.stringify(this.folders));
+                localStorage.setItem('sticky_notes', JSON.stringify(this.notes));
+            }
+
+            // --- Folders ---
+            renderFolders() {
+                this.folderList.innerHTML = '';
+
+                // Static 'All Notes'
+                this.folderList.appendChild(this.createFolderEl({ id: 'all', name: 'All Notes' }));
+
+                this.folders.forEach(f => {
+                    if (f.id !== 'all') this.folderList.appendChild(this.createFolderEl(f));
+                });
+            }
+
+            createFolderEl(folder) {
+                const li = document.createElement('li');
+                li.className = `folder-item ${this.activeFolderId === folder.id ? 'active' : ''}`;
+                li.onclick = () => this.selectFolder(folder.id);
+
+                const span = document.createElement('span');
+                span.textContent = folder.name;
+                li.appendChild(span);
+
+                if (folder.id !== 'all') {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'delete-folder';
+                    delBtn.innerHTML = '🗑️';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.deleteFolder(folder.id);
+                    };
+                    li.appendChild(delBtn);
+                }
+
+                return li;
+            }
+
+            createFolder() {
+                const name = prompt("Enter folder name:");
+                if (!name || !name.trim()) return;
+
+                const newFolder = {
+                    id: generateId(),
+                    name: name.trim(),
+                    createdAt: new Date().toISOString()
+                };
+
+                this.folders.push(newFolder);
+                this.save();
+                this.selectFolder(newFolder.id);
+            }
+
+            deleteFolder(id) {
+                const folderIndex = this.folders.findIndex(f => f.id === id);
+                if (folderIndex === -1) return;
+
+                const folderToDel = this.folders[folderIndex];
+                const notesToDel = this.notes.filter(n => n.folderId === id);
+
+                // Setup Undo
+                this.undoCache = { folder: folderToDel, notes: notesToDel };
+                this.showToast(`Deleted "${folderToDel.name}"`);
+
+                // Remove data
+                this.folders.splice(folderIndex, 1);
+                this.notes = this.notes.filter(n => n.folderId !== id);
+
+                if (this.activeFolderId === id) this.activeFolderId = 'all';
+
+                this.save();
+                this.renderFolders();
+                this.renderNotes();
+            }
+
+            selectFolder(id) {
+                this.activeFolderId = id;
+                this.renderFolders();
+                this.renderNotes();
+            }
+
+            // --- Notes ---
+            renderNotes() {
+                this.canvas.querySelectorAll('.note').forEach(n => n.remove());
+                const visibleNotes = this.activeFolderId === 'all'
+                    ? this.notes
+                    : this.notes.filter(n => n.folderId === this.activeFolderId);
+
+                visibleNotes.forEach(note => this.canvas.appendChild(this.createNoteEl(note)));
+            }
+
+            createNoteEl(note) {
+                const el = document.createElement('div');
+                el.className = 'note';
+                el.id = note.id;
+                el.style.left = `${note.x}px`;
+                el.style.top = `${note.y}px`;
+                el.style.backgroundColor = note.color || COLORS.yellow;
+
+                // Header (Controls + Drag handle)
+                const header = document.createElement('div');
+                header.className = 'note-header';
+
+                // Color Picker
+                const colorBtn = document.createElement('button');
+                colorBtn.className = 'icon-btn';
+                colorBtn.innerHTML = '🎨';
+
+                const colorPicker = document.createElement('div');
+                colorPicker.className = 'color-picker';
+                Object.values(COLORS).forEach(hex => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = hex;
+                    swatch.onclick = () => this.updateNote(note.id, { color: hex });
+                    colorPicker.appendChild(swatch);
+                });
+
+                colorBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.color-picker').forEach(p => p !== colorPicker && p.classList.remove('show'));
+                    colorPicker.classList.toggle('show');
+                };
+
+                header.appendChild(colorBtn);
+                header.appendChild(colorPicker);
+
+                // Delete Btn
+                const delBtn = document.createElement('button');
+                delBtn.className = 'icon-btn';
+                delBtn.innerHTML = '🗑️';
+                delBtn.onclick = () => this.deleteNote(note.id);
+                header.appendChild(delBtn);
+
+                // Drag Logic
+                header.addEventListener('mousedown', (e) => this.startDrag(e, el, note));
+
+                // Content
+                const content = document.createElement('div');
+                content.className = 'note-content';
+                content.contentEditable = true;
+                content.innerHTML = note.content || '';
+
+                // Debounce saving text
+                const saveContent = debounce(() => {
+                    this.updateNote(note.id, { content: content.innerHTML }, true);
+                }, 500);
+                content.addEventListener('input', saveContent);
+
+                // Click to bring to front
+                el.addEventListener('mousedown', () => {
+                    this.highestZ++;
+                    el.style.zIndex = this.highestZ;
+                });
+
+                // Footer (Timestamp)
+                const footer = document.createElement('div');
+                footer.className = 'note-footer';
+                footer.innerText = `Edited ${timeAgo(note.updatedAt)}`;
+
+                el.appendChild(header);
+                el.appendChild(content);
+                el.appendChild(footer);
+                return el;
+            }
+
+            createNote() {
+                const folderId = this.activeFolderId === 'all' ? 'all' : this.activeFolderId;
+
+                // Slight stagger for new notes
+                const offset = (this.notes.length % 5) * 20;
+
+                const newNote = {
+                    id: generateId(),
+                    folderId: folderId,
+                    content: '',
+                    color: COLORS.yellow,
+                    x: 100 + offset,
+                    y: 100 + offset,
+                    updatedAt: new Date().toISOString()
+                };
+
+                this.notes.push(newNote);
+                this.save();
+
+                const el = this.createNoteEl(newNote);
+                this.canvas.appendChild(el);
+
+                // Focus newly created note
+                setTimeout(() => el.querySelector('.note-content').focus(), 50);
+            }
+
+            updateNote(id, updates, skipRender = false) {
+                const note = this.notes.find(n => n.id === id);
+                if (!note) return;
+
+                Object.assign(note, updates);
+                note.updatedAt = new Date().toISOString();
+                this.save();
+
+                if (!skipRender) this.renderNotes();
+                else {
+                    // Just update the footer timestamp locally to avoid losing cursor focus
+                    const el = document.getElementById(id);
+                    if (el) el.querySelector('.note-footer').innerText = `Edited ${timeAgo(note.updatedAt)}`;
+                }
+            }
+
+            deleteNote(id) {
+                this.notes = this.notes.filter(n => n.id !== id);
+                this.save();
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            }
+
+            // --- Drag & Drop (Custom implementation for absolute positioning) ---
+            startDrag(e, el, note) {
+                // Ignore if clicking a button inside header
+                if (e.target.closest('.icon-btn') || e.target.closest('.color-picker')) return;
+
+                this.dragState.isDragging = true;
+                this.dragState.el = el;
+                this.dragState.note = note;
+                this.dragState.startX = e.clientX;
+                this.dragState.startY = e.clientY;
+                this.dragState.initialX = note.x;
+                this.dragState.initialY = note.y;
+
+                el.classList.add('dragging');
+                this.highestZ++;
+                el.style.zIndex = this.highestZ;
+            }
+
+            onMouseMove(e) {
+                if (!this.dragState.isDragging) return;
+                e.preventDefault();
+
+                const dx = e.clientX - this.dragState.startX;
+                const dy = e.clientY - this.dragState.startY;
+
+                const newX = this.dragState.initialX + dx;
+                const newY = this.dragState.initialY + dy;
+
+                this.dragState.el.style.left = `${newX}px`;
+                this.dragState.el.style.top = `${newY}px`;
+            }
+
+            onMouseUp(e) {
+                if (!this.dragState.isDragging) return;
+
+                const dx = e.clientX - this.dragState.startX;
+                const dy = e.clientY - this.dragState.startY;
+
+                this.dragState.el.classList.remove('dragging');
+
+                // Save new position
+                this.updateNote(this.dragState.note.id, {
+                    x: this.dragState.initialX + dx,
+                    y: this.dragState.initialY + dy
+                }, true);
+
+                this.dragState.isDragging = false;
+                this.dragState.el = null;
+            }
+
+            // --- UI/UX Helpers ---
+            showToast(msg) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toast-msg').innerText = msg;
+                toast.classList.add('show');
+
+                clearTimeout(this.undoTimeout);
+                this.undoTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                    this.undoCache = null;
+                }, 5000);
+            }
+
+            undoDelete() {
+                if (!this.undoCache) return;
+
+                this.folders.push(this.undoCache.folder);
+                this.notes.push(...this.undoCache.notes);
+                this.save();
+
+                this.renderFolders();
+                if (this.activeFolderId === 'all' || this.activeFolderId === this.undoCache.folder.id) {
+                    this.renderNotes();
+                }
+
+                document.getElementById('toast').classList.remove('show');
+                this.undoCache = null;
+            }
+
+            setupGlobalEvents() {
+                // Dragging global listeners
+                document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                document.addEventListener('mouseup', (e) => this.onMouseUp(e));
+
+                // Close color pickers when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.color-picker') && !e.target.closest('.icon-btn')) {
+                        document.querySelectorAll('.color-picker.show').forEach(p => p.classList.remove('show'));
+                    }
+                });
+
+                // Keyboard Shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl+N or Cmd+N
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        this.createNote();
+                    }
+
+                    // Escape to blur (discard focus)
+                    if (e.key === 'Escape') {
+                        if (document.activeElement.classList.contains('note-content')) {
+                            document.activeElement.blur();
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize App
+        const app = new StickyApp();
+    </script>
+</body>
+
+</html>
