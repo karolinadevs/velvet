@@ -20,6 +20,7 @@ class PopupNotesApp {
         const data = await chrome.storage.local.get(['folders', 'notes', 'activeFolderId']);
         this.folders = data.folders || [{ id: 'default', name: 'My Notes', createdAt: Date.now() }];
         this.notes = data.notes || [];
+
         if (data.activeFolderId && this.folders.find(f => f.id === data.activeFolderId)) {
             this.activeFolderId = data.activeFolderId;
         } else {
@@ -27,7 +28,7 @@ class PopupNotesApp {
         }
 
         if (this.notes.length === 0) {
-            this.createNote("Welcome!", "Double click to edit.\nPress Ctrl+Shift+9 for a checklist.\nRight-click for options.");
+            this.createNote("Welcome!", "Double click to edit.\nPress Ctrl+Shift+9 for a checklist.\nRight-click a note for options.");
         }
 
         this.bindEvents();
@@ -41,29 +42,28 @@ class PopupNotesApp {
         document.getElementById('fab-new-note').addEventListener('click', () => this.createNote());
 
         document.addEventListener('keydown', (e) => {
-            // Escape to close menus or blur
             if (e.key === 'Escape') {
                 if (document.activeElement) document.activeElement.blur();
                 this.closeContextMenu();
             }
-            // Ctrl+N for New Note
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            // Ctrl/Cmd + N
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
                 e.preventDefault();
                 this.createNote();
             }
-            // Ctrl+Shift+F for New Folder
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
+            // Ctrl/Cmd + Shift + F
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
                 e.preventDefault();
                 this.createFolder();
             }
-            // Ctrl+Shift+9 for Checklist Toggle
+            // Ctrl/Cmd + Shift + 9
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '9') {
                 e.preventDefault();
                 this.toggleChecklistForSelection();
             }
         });
 
-        // Delegate Checkbox clicks for strict state saving
+        // Delegate Checkbox clicks
         this.board.addEventListener('change', (e) => {
             if (e.target.classList.contains('task-cb')) {
                 const parentDiv = e.target.closest('div');
@@ -95,15 +95,15 @@ class PopupNotesApp {
                 notes: this.notes,
                 activeFolderId: this.activeFolderId
             });
-        }, 300); // Faster debounce for popup environment
+        }, 300);
     }
 
     // --- Folders ---
     createFolder() {
         const name = prompt('Folder name:');
-        if (!name) return;
+        if (!name || !name.trim()) return;
         const id = 'folder_' + Date.now();
-        this.folders.push({ id, name, createdAt: Date.now() });
+        this.folders.push({ id, name: name.trim(), createdAt: Date.now() });
         this.activeFolderId = id;
         this.renderFolders();
         this.renderBoard();
@@ -142,7 +142,7 @@ class PopupNotesApp {
             const actions = document.createElement('div');
             actions.className = 'folder-actions';
             const delBtn = document.createElement('button');
-            delBtn.innerHTML = '✖';
+            delBtn.innerHTML = '✕';
             delBtn.onclick = (e) => { e.stopPropagation(); this.deleteFolder(folder.id); };
 
             actions.appendChild(delBtn);
@@ -161,7 +161,7 @@ class PopupNotesApp {
             color: this.colors[Math.floor(Math.random() * this.colors.length)],
         };
 
-        this.notes.unshift(note); // Add to beginning of grid
+        this.notes.unshift(note);
         this.renderBoard();
         this.saveData();
 
@@ -212,6 +212,7 @@ class PopupNotesApp {
             this.toggleChecklistForSelection();
         };
 
+        // Color Toolbar Button
         const colorBtn = document.createElement('button');
         colorBtn.className = 'note-btn';
         colorBtn.innerHTML = '🎨';
@@ -255,7 +256,7 @@ class PopupNotesApp {
         if (!sel.rangeCount) return;
 
         let node = sel.focusNode;
-        // Ensure we are inside a note body
+        // Ensure cursor is inside a note body
         const noteBody = node.nodeType === 3 ? node.parentElement.closest('.note-body') : node.closest('.note-body');
         if (!noteBody) return;
 
@@ -273,7 +274,6 @@ class PopupNotesApp {
             // Remove checklist
             hasCheckbox.remove();
             blockNode.classList.remove('line-checked');
-            // Clean up leading spaces left behind
             blockNode.innerHTML = blockNode.innerHTML.replace(/^&nbsp;/, '').trim();
         } else {
             // Add checklist
@@ -281,7 +281,7 @@ class PopupNotesApp {
             cb.type = 'checkbox';
             cb.className = 'task-cb';
             blockNode.insertBefore(cb, blockNode.firstChild);
-            blockNode.insertBefore(document.createTextNode('\u00A0'), cb.nextSibling); // Add space
+            blockNode.insertBefore(document.createTextNode('\u00A0'), cb.nextSibling);
         }
 
         const noteId = noteBody.closest('.note').id;
@@ -295,11 +295,11 @@ class PopupNotesApp {
             e.preventDefault();
             this.contextTargetId = noteEl.id;
 
-            // Constrain menu within popup bounds
+            // Constrain menu within 800x600 popup bounds to avoid clipping
             let x = e.clientX;
             let y = e.clientY;
-            if (x + 160 > window.innerWidth) x = window.innerWidth - 165;
-            if (y + 100 > window.innerHeight) y = window.innerHeight - 105;
+            if (x + 180 > window.innerWidth) x = window.innerWidth - 185;
+            if (y + 120 > window.innerHeight) y = window.innerHeight - 125;
 
             this.contextMenu.style.left = `${x}px`;
             this.contextMenu.style.top = `${y}px`;

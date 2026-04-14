@@ -3,29 +3,22 @@
     --font-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
-    /* Light Theme */
-    --bg-color: #ffffff;
+    /* Strict Color Palette constraints */
+    --bg-color: #FFFFFF;
     --text-color: #1d1d1f;
     --caret-color: #1d1d1f;
-    --sidebar-border: #e0e0e0;
+    --sidebar-border: #f0f0f0;
     --menu-bg: #ffffff;
     --menu-hover: #f5f5f7;
-    --menu-border: rgba(0, 0, 0, 0.1);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-color: #1e1e1e;
-        --text-color: #f5f5f7;
-        --caret-color: #f5f5f7;
-        --sidebar-border: #333333;
-        --menu-bg: #2d2d2d;
-        --menu-hover: #3d3d3d;
-        --menu-border: rgba(255, 255, 255, 0.1);
-        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+        /* Note: Kept background pure white per instructions, but you can adjust these for dark mode if desired */
+        --bg-color: #FFFFFF;
+        --text-color: #1d1d1f;
     }
 }
 
@@ -35,15 +28,19 @@
     padding: 0;
 }
 
-/* Chrome Popups limit: We force 800x600 and apply the requested padding */
+/* Resizable constraints */
 body {
-    width: 800px;
-    height: 600px;
-    margin: 0;
-    padding: 24px;
-    font-family: var(--font-base);
     background-color: var(--bg-color);
     color: var(--text-color);
+    font-family: var(--font-base);
+    min-width: 700px;
+    width: 90vw;
+    max-width: 1200px;
+    min-height: 500px;
+    height: 90vh;
+    max-height: 900px;
+    margin: 0;
+    padding: 24px;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
 }
@@ -52,9 +49,10 @@ body {
     display: flex;
     height: 100%;
     width: 100%;
+    background-color: #FFFFFF;
 }
 
-/* Sidebar with updated spacing */
+/* Sidebar Layout */
 .sidebar {
     width: 180px;
     padding-right: 20px;
@@ -69,7 +67,7 @@ body {
     font-weight: 600;
     font-size: 16px;
     margin-top: 0;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     padding-left: 8px;
     letter-spacing: -0.01em;
 }
@@ -87,17 +85,17 @@ body {
     cursor: pointer;
     display: flex;
     justify-content: space-between;
-    transition: background 0.2s;
     font-size: 14px;
+    transition: background 0.2s;
 }
 
 .folder-item:hover {
-    background: rgba(150, 150, 150, 0.1);
+    background: #f9f9f9;
 }
 
 .folder-item.active {
     font-weight: 600;
-    background: rgba(150, 150, 150, 0.15);
+    background: #f0f0f0;
 }
 
 .folder-actions button {
@@ -122,22 +120,39 @@ body {
     border: none;
     border-radius: 6px;
     background: var(--text-color);
-    color: var(--bg-color);
+    color: #fff;
     cursor: pointer;
     font-weight: 600;
     font-family: var(--font-base);
-    transition: opacity 0.2s;
 }
 
-.btn-primary:hover {
-    opacity: 0.8;
-}
-
-/* Board & Notes */
+/* Main Board */
 .board-container {
     flex-grow: 1;
     position: relative;
     overflow-y: auto;
+    padding-left: 10px;
+}
+
+.window-btn {
+    position: absolute;
+    top: 0;
+    right: 10px;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #555;
+    font-family: var(--font-base);
+    transition: background 0.2s;
+    z-index: 50;
+}
+
+.window-btn:hover {
+    background: #f5f5f7;
+    color: #000;
 }
 
 .board {
@@ -145,25 +160,25 @@ body {
     flex-wrap: wrap;
     gap: 20px;
     padding: 16px 8px;
-    /* Crucial padding to avoid edge collisions */
     align-content: flex-start;
+    margin-top: 25px;
+    /* Offset for window-btn */
 }
 
+/* Post-it Notes */
 .note {
-    width: calc(50% - 10px);
-    /* 2 notes per row */
+    width: calc(33.333% - 14px);
     min-width: 220px;
     min-height: 220px;
     padding: 16px;
+    border-radius: 4px;
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     color: #1d1d1f;
-    /* Notes text always dark for pastel contrast */
-    border-radius: 4px;
     position: relative;
     transform: none !important;
-    /* Forces straight alignment */
+    /* Perfect straight alignment */
     transition: box-shadow 0.2s;
 }
 
@@ -174,7 +189,8 @@ body {
 .note-header {
     display: flex;
     justify-content: flex-end;
-    gap: 4px;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 8px;
     opacity: 0;
     transition: opacity 0.2s;
@@ -203,7 +219,28 @@ body {
     color: #000;
 }
 
-/* Note Typography & Carets */
+/* Custom Native Color Picker */
+.color-picker {
+    -webkit-appearance: none;
+    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}
+
+/* Note Inputs */
 .note-title {
     font-family: var(--font-display);
     font-size: 16px;
@@ -256,7 +293,7 @@ body {
     background: var(--menu-bg);
     border-radius: 8px;
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--menu-border);
+    border: 1px solid var(--sidebar-border);
     padding: 6px 0;
     min-width: 180px;
     z-index: 2000;
@@ -282,8 +319,6 @@ body {
     color: #ff3b30;
 }
 
-/* SF system red */
-
 .submenu {
     display: none;
     position: absolute;
@@ -291,7 +326,7 @@ body {
     top: -6px;
     background: var(--menu-bg);
     border-radius: 8px;
-    border: 1px solid var(--menu-border);
+    border: 1px solid var(--sidebar-border);
     box-shadow: var(--shadow-md);
     min-width: 150px;
     padding: 6px 0;
@@ -318,15 +353,13 @@ body {
     height: 48px;
     border-radius: 50%;
     background: var(--text-color);
-    color: var(--bg-color);
+    color: #fff;
     border: none;
     cursor: pointer;
     box-shadow: var(--shadow-md);
     z-index: 90;
-    transition: transform 0.2s, background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 24px;
+    transition: transform 0.2s;
 }
 
 .fab:hover {

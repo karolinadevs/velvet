@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Popup Sticky Notes",
+    "name": "Notes",
     "version": "1.4.0",
     "description": "A clean, fast sticky note board with checklists and folders, right in your toolbar.",
     "permissions": [
@@ -8,6 +8,6 @@
     ],
     "action": {
         "default_popup": "popup.html",
-        "default_title": "Open Notes"
+        "default_title": "Notes"
     }
 }
