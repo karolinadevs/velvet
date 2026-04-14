@@ -1,23 +1,31 @@
 :root {
-    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --bg-color: #f0f2f5;
-    --text-color: #333;
-    --caret-color: #333;
-    --sidebar-bg: #ffffff;
+    /* San Francisco Typography Stack */
+    --font-base: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    /* Light Theme */
+    --bg-color: #ffffff;
+    --text-color: #1d1d1f;
+    --caret-color: #1d1d1f;
     --sidebar-border: #e0e0e0;
-    --menu-bg: #fff;
-    --menu-hover: #f0f0f0;
+    --menu-bg: #ffffff;
+    --menu-hover: #f5f5f7;
+    --menu-border: rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-color: #1a1a1a;
-        --text-color: #e0e0e0;
-        --caret-color: #ffffff;
-        --sidebar-bg: #282828;
-        --sidebar-border: #444;
+        --bg-color: #1e1e1e;
+        --text-color: #f5f5f7;
+        --caret-color: #f5f5f7;
+        --sidebar-border: #333333;
         --menu-bg: #2d2d2d;
         --menu-hover: #3d3d3d;
+        --menu-border: rgba(255, 255, 255, 0.1);
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
 }
 
@@ -27,14 +35,17 @@
     padding: 0;
 }
 
-/* Chrome Popups max out at 800x600. We force this size. */
+/* Chrome Popups limit: We force 800x600 and apply the requested padding */
 body {
     width: 800px;
     height: 600px;
-    font-family: var(--font-family);
+    margin: 0;
+    padding: 24px;
+    font-family: var(--font-base);
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
@@ -43,34 +54,36 @@ body {
     width: 100%;
 }
 
-/* Sidebar */
+/* Sidebar with updated spacing */
 .sidebar {
-    width: 200px;
-    background: var(--sidebar-bg);
+    width: 180px;
+    padding-right: 20px;
     border-right: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
-    z-index: 100;
+    flex-shrink: 0;
 }
 
-.sidebar-header {
-    padding: 15px;
-    border-bottom: 1px solid var(--sidebar-border);
-}
-
-.sidebar-header h2 {
+.sidebar h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
     font-size: 16px;
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-left: 8px;
+    letter-spacing: -0.01em;
 }
 
 .folder-list {
     list-style: none;
     flex-grow: 1;
     overflow-y: auto;
-    padding: 10px 0;
 }
 
 .folder-item {
-    padding: 10px 15px;
+    padding: 8px;
+    margin-bottom: 4px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -79,18 +92,12 @@ body {
 }
 
 .folder-item:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-@media (prefers-color-scheme: dark) {
-    .folder-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
+    background: rgba(150, 150, 150, 0.1);
 }
 
 .folder-item.active {
-    font-weight: bold;
-    border-left: 4px solid var(--text-color);
+    font-weight: 600;
+    background: rgba(150, 150, 150, 0.15);
 }
 
 .folder-actions button {
@@ -106,18 +113,24 @@ body {
 }
 
 .folder-actions button:hover {
-    color: red;
+    color: #d32f2f;
 }
 
 .btn-primary {
-    margin: 15px;
+    margin-top: 16px;
     padding: 10px;
     border: none;
     border-radius: 6px;
     background: var(--text-color);
     color: var(--bg-color);
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 600;
+    font-family: var(--font-base);
+    transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+    opacity: 0.8;
 }
 
 /* Board & Notes */
@@ -125,53 +138,44 @@ body {
     flex-grow: 1;
     position: relative;
     overflow-y: auto;
-    padding: 20px;
 }
 
 .board {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    padding: 16px 8px;
+    /* Crucial padding to avoid edge collisions */
     align-content: flex-start;
 }
 
 .note {
     width: calc(50% - 10px);
-    /* 2 notes per row in the remaining ~600px space */
-    min-width: 200px;
-    min-height: 200px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* 2 notes per row */
+    min-width: 220px;
+    min-height: 220px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    color: #111;
+    color: #1d1d1f;
     /* Notes text always dark for pastel contrast */
-    border-radius: 2px;
+    border-radius: 4px;
     position: relative;
     transform: none !important;
     /* Forces straight alignment */
+    transition: box-shadow 0.2s;
 }
 
-/* Tape Effect */
-.note::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    border-radius: 2px;
-    pointer-events: none;
+.note:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .note-header {
     display: flex;
     justify-content: flex-end;
-    gap: 5px;
-    margin-bottom: 5px;
+    gap: 4px;
+    margin-bottom: 8px;
     opacity: 0;
     transition: opacity 0.2s;
 }
@@ -195,19 +199,19 @@ body {
 }
 
 .note-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.08);
     color: #000;
 }
 
-/* Note Inputs with explicit carets */
+/* Note Typography & Carets */
 .note-title {
+    font-family: var(--font-display);
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
     border: none;
     background: transparent;
     outline: none;
-    margin-bottom: 10px;
-    font-family: inherit;
+    margin-bottom: 8px;
     color: inherit;
     width: 100%;
     cursor: text;
@@ -215,12 +219,13 @@ body {
 }
 
 .note-title::placeholder {
-    color: rgba(0, 0, 0, 0.4);
-    font-weight: normal;
-    font-style: italic;
+    color: rgba(29, 29, 31, 0.4);
+    font-weight: 400;
 }
 
 .note-body {
+    font-family: var(--font-base);
+    font-weight: 400;
     flex-grow: 1;
     font-size: 14px;
     line-height: 1.5;
@@ -237,22 +242,23 @@ body {
     margin-right: 8px;
     cursor: pointer;
     vertical-align: middle;
+    accent-color: #1d1d1f;
 }
 
 .line-checked {
     text-decoration: line-through;
-    color: rgba(0, 0, 0, 0.5);
+    color: rgba(29, 29, 31, 0.5);
 }
 
 /* Context Menu */
 .context-menu {
     position: fixed;
     background: var(--menu-bg);
-    border-radius: 6px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--sidebar-border);
-    padding: 5px 0;
-    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--menu-border);
+    padding: 6px 0;
+    min-width: 180px;
     z-index: 2000;
     font-size: 14px;
 }
@@ -262,7 +268,7 @@ body {
 }
 
 .menu-item {
-    padding: 8px 15px;
+    padding: 8px 16px;
     cursor: pointer;
     position: relative;
     color: var(--text-color);
@@ -273,20 +279,22 @@ body {
 }
 
 .text-danger {
-    color: #d32f2f;
+    color: #ff3b30;
 }
+
+/* SF system red */
 
 .submenu {
     display: none;
     position: absolute;
     left: 100%;
-    top: -5px;
+    top: -6px;
     background: var(--menu-bg);
-    border-radius: 6px;
-    border: 1px solid var(--sidebar-border);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--menu-border);
+    box-shadow: var(--shadow-md);
     min-width: 150px;
-    padding: 5px 0;
+    padding: 6px 0;
 }
 
 .has-submenu:hover .submenu {
@@ -304,19 +312,21 @@ body {
 /* FAB */
 .fab {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    bottom: 32px;
+    right: 32px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--text-color);
     color: var(--bg-color);
     border: none;
-    font-size: 24px;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
     z-index: 90;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .fab:hover {
