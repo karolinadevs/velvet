@@ -1,9 +1,9 @@
-class PopupNotesApp {
+class StickyNotesApp {
     constructor() {
         this.folders = [];
         this.notes = [];
         this.activeFolderId = 'default';
-        this.colors = ['#FFF9C4', '#F8BBD0', '#E1BEE7', '#BBDEFB', '#C8E6C9'];
+        this.defaultColor = '#FFF9C4'; // Pastel Yellow
 
         this.board = document.getElementById('board');
         this.folderList = document.getElementById('folder-list');
@@ -28,12 +28,18 @@ class PopupNotesApp {
         }
 
         if (this.notes.length === 0) {
-            this.createNote("Welcome!", "Double click to edit.\nPress Ctrl+Shift+9 for a checklist.\nRight-click a note for options.");
+            this.createNote("Welcome!", "Double click to edit.\nPress Ctrl+Shift+9 for a checklist.\nRight-click a note to move/delete it.");
         }
 
         this.bindEvents();
         this.renderFolders();
         this.renderBoard();
+
+        // Hide "Open in Window" button if we are already in a detached window
+        if (window.innerWidth > 800) {
+            document.getElementById('btn-open-window').style.display = 'none';
+        }
+
         document.getElementById('shortcut-focus').focus();
     }
 
@@ -41,29 +47,37 @@ class PopupNotesApp {
         document.getElementById('btn-new-folder').addEventListener('click', () => this.createFolder());
         document.getElementById('fab-new-note').addEventListener('click', () => this.createNote());
 
+        // Open in Window Handler
+        document.getElementById('btn-open-window').addEventListener('click', () => {
+            chrome.windows.create({
+                url: 'popup.html',
+                type: 'popup',
+                width: 900,
+                height: 700,
+                resizable: true
+            });
+        });
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (document.activeElement) document.activeElement.blur();
                 this.closeContextMenu();
             }
-            // Ctrl/Cmd + N
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
                 e.preventDefault();
                 this.createNote();
             }
-            // Ctrl/Cmd + Shift + F
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
                 e.preventDefault();
                 this.createFolder();
             }
-            // Ctrl/Cmd + Shift + 9
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === '9') {
                 e.preventDefault();
                 this.toggleChecklistForSelection();
             }
         });
 
-        // Delegate Checkbox clicks
+        // Delegate Checkbox status toggles
         this.board.addEventListener('change', (e) => {
             if (e.target.classList.contains('task-cb')) {
                 const parentDiv = e.target.closest('div');
@@ -86,7 +100,6 @@ class PopupNotesApp {
         });
     }
 
-    // --- State & Storage ---
     saveData() {
         clearTimeout(this.saveTimeout);
         this.saveTimeout = setTimeout(() => {
@@ -158,7 +171,7 @@ class PopupNotesApp {
             folderId: this.activeFolderId,
             title: title,
             body: body || '<div><br></div>',
-            color: this.colors[Math.floor(Math.random() * this.colors.length)],
+            color: this.defaultColor,
         };
 
         this.notes.unshift(note);
@@ -178,12 +191,11 @@ class PopupNotesApp {
         this.saveData();
     }
 
-    cycleColor(noteId) {
+    updateNoteColor(noteId, hexColor) {
         const note = this.notes.find(n => n.id === noteId);
         if (!note) return;
-        const nextIndex = (this.colors.indexOf(note.color) + 1) % this.colors.length;
-        note.color = this.colors[nextIndex];
-        document.getElementById(noteId).style.backgroundColor = note.color;
+        note.color = hexColor;
+        document.getElementById(noteId).style.backgroundColor = hexColor;
         this.saveData();
     }
 
@@ -202,7 +214,7 @@ class PopupNotesApp {
         const header = document.createElement('div');
         header.className = 'note-header';
 
-        // Checkbox Toolbar Button
+        // Checkbox Hover Button
         const checkBtn = document.createElement('button');
         checkBtn.className = 'note-btn';
         checkBtn.innerHTML = '☑';
@@ -212,13 +224,15 @@ class PopupNotesApp {
             this.toggleChecklistForSelection();
         };
 
-        // Color Toolbar Button
-        const colorBtn = document.createElement('button');
-        colorBtn.className = 'note-btn';
-        colorBtn.innerHTML = '🎨';
-        colorBtn.onclick = () => this.cycleColor(note.id);
+        // Native HTML5 Color Picker
+        const colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.className = 'color-picker';
+        colorPicker.value = note.color;
+        colorPicker.title = "Change note color";
+        colorPicker.addEventListener('input', (e) => this.updateNoteColor(note.id, e.target.value));
 
-        header.append(checkBtn, colorBtn);
+        header.append(checkBtn, colorPicker);
 
         const titleInput = document.createElement('input');
         titleInput.className = 'note-title';
@@ -256,14 +270,11 @@ class PopupNotesApp {
         if (!sel.rangeCount) return;
 
         let node = sel.focusNode;
-        // Ensure cursor is inside a note body
         const noteBody = node.nodeType === 3 ? node.parentElement.closest('.note-body') : node.closest('.note-body');
         if (!noteBody) return;
 
-        // Force wrap text in a block element (div) if not already
         document.execCommand('formatBlock', false, 'div');
 
-        // Find the block container of the current cursor
         let blockNode = sel.focusNode;
         while (blockNode && blockNode.nodeType === 3) blockNode = blockNode.parentElement;
         if (!blockNode || blockNode === noteBody) return;
@@ -271,12 +282,10 @@ class PopupNotesApp {
         const hasCheckbox = blockNode.querySelector('.task-cb');
 
         if (hasCheckbox) {
-            // Remove checklist
             hasCheckbox.remove();
             blockNode.classList.remove('line-checked');
             blockNode.innerHTML = blockNode.innerHTML.replace(/^&nbsp;/, '').trim();
         } else {
-            // Add checklist
             const cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'task-cb';
@@ -295,7 +304,6 @@ class PopupNotesApp {
             e.preventDefault();
             this.contextTargetId = noteEl.id;
 
-            // Constrain menu within 800x600 popup bounds to avoid clipping
             let x = e.clientX;
             let y = e.clientY;
             if (x + 180 > window.innerWidth) x = window.innerWidth - 185;
@@ -347,5 +355,5 @@ class PopupNotesApp {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new PopupNotesApp();
+    window.app = new StickyNotesApp();
 });
